@@ -1,0 +1,39 @@
+name: bathanmart
+description: Bathan Mart — Local & Global Products. Delivered Fast. Everywhere.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  image_picker: ^1.1.2
+  http: ^1.2.2
+  # State Management
+  flutter_bloc: ^9.0.0
+  equatable: ^2.0.7
+
+  # Navigation
+  go_router: ^14.6.0
+
+  # HTTP
+  dio: ^5.7.0
+
+  # Storage — works on Web, Android, iOS, Desktop
+  shared_preferences: ^2.3.0
+
+  # UI & Fonts
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
