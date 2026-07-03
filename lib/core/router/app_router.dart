@@ -1,3 +1,4 @@
+import 'package:bathanmart/features/landing/screens/all_categories_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -39,6 +40,7 @@ import '../../features/admin/screens/admin_accounting_screen.dart';
 import '../../features/riders/screens/rider_screen.dart';
 import '../../features/riders/screens/rider_intro_screen.dart';
 import '../../shared/widgets/main_shell.dart';
+import '../../features/landing/screens/category_products_screen.dart'; // adjust path
 
 class AppRouter {
   AppRouter._();
@@ -103,6 +105,8 @@ class AppRouter {
           GoRoute(path:'/subscriptions',builder:(_,__)=>const SubscriptionListScreen(),
             routes:[GoRoute(path:'create',builder:(_,s)=>CreateSubscriptionScreen(skuId:s.extra as String?))]),
           GoRoute(path:'/inventory',    builder:(_,__)=>const InventoryScreen()),
+          GoRoute(path: '/categories',  builder: (context, state) => const AllCategoriesScreen()),
+          GoRoute(path: '/category/:id',builder: (_, s) => CategoryProductsScreen(categoryId: s.pathParameters['id']!)),
         ],
       ),
     ],
