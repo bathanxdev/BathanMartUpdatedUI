@@ -8,8 +8,6 @@ import '../../../core/utils/responsive.dart';
 import '../../../features/auth/bloc/auth_bloc.dart';
 import '../../../features/cart/bloc/cart_bloc.dart';
 import '../../../shared/widgets/app_widgets.dart';
-// Shared nav/footer/category-icon helpers — one implementation used by
-// every customer screen (landing, all-categories, category-products).
 import '../../../shared/widgets/storefront_nav.dart';
 
 class CustomerLandingPage extends StatefulWidget {
@@ -86,7 +84,6 @@ class _CustomerLandingPageState extends State<CustomerLandingPage> {
                 ),
               ),
               const SizedBox(height: 24),
-              // Perks — auto-scrolling marquee, same side gap as hero
               const _PerksMarquee(),
               const SizedBox(height: 32),
               PageContainer(
@@ -337,20 +334,20 @@ class _HeroImageSlide extends StatelessWidget {
                     style: AppText.body(color: Colors.white.withAlpha(220))),
               ),
               const SizedBox(height: 20),
-              // FIX (item 3): because this Column lives inside a
-              // Stack(fit: StackFit.expand), it gets stretched to the
-              // full width of the slide — which was stretching the CTA
-              // button into a giant full-width bar instead of a
-              // compact pill. Wrapping it in Align(centerLeft) makes it
-              // hug its own content again, matching slide 1's buttons.
-              Align(
-                alignment: Alignment.centerLeft,
-                child: IntrinsicWidth(
-                  child: _HeroCta(
-                    label: cta,
-                    onTap: () => context.go('/products'),
-                    compact: true,
-                  ),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: isDesktop ? 320 : 360),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _HeroCta(
+                        label: cta,
+                        onTap: () => context.go('/products'),
+                        compact: true,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(child: SizedBox()),
+                  ],
                 ),
               ),
             ],
@@ -452,12 +449,6 @@ class _HeroBanner extends StatelessWidget {
     );
   }
 
-  // FIX (item 3): the tile grid was tall enough to overflow the fixed-
-  // height hero card, so the bottom row got hard-clipped by the card's
-  // ClipRRect instead of sitting inside it — which is why the second
-  // row visually lost its rounded corners. Shrinking the tiles
-  // (flatter aspect ratio, tighter spacing, smaller icon) brings the
-  // grid's total height back inside the card so nothing gets clipped.
   Widget _tileGrid() {
     return GridView.builder(
       shrinkWrap: true,
@@ -722,9 +713,6 @@ class _PerkCardState extends State<_PerkCard> {
           Container(
             width: 40,
             height: 40,
-            // FIX (item 4): these were AppColors.primarySoft /
-            // AppColors.primary (blue), which didn't match the rest of
-            // the brand's orange accent. Now uses the accent palette.
             decoration: BoxDecoration(
                 color: AppColors.accent.withAlpha(28), shape: BoxShape.circle),
             child: Icon(p.$1, size: 20, color: AppColors.accent),
