@@ -1,18 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-// Adjust these two relative paths if you place this file somewhere other
-// than lib/shared/widgets/ — they assume that location.
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/responsive.dart';
 import 'app_widgets.dart' show PageContainer;
 
-// ────────────────────────────────────────────────────────────
-// CATEGORY ICON / COLOR HELPERS
-// Single source of truth — was previously copy-pasted in
-// customer_landing_page.dart, all_categories_screen.dart and
-// category_products_screen.dart.
-// ────────────────────────────────────────────────────────────
 IconData iconForCategory(String name) {
   final n = name.toLowerCase();
   if (n.contains('grocer') || n.contains('food') || n.contains('pantry')) {
@@ -71,10 +63,35 @@ const List<Color> kCategoryPalette = [
 Color colorForCategoryIndex(int i) =>
     kCategoryPalette[i % kCategoryPalette.length];
 
-// ────────────────────────────────────────────────────────────
-// TOP NAV BAR — logo · Categories+search pill · Deals · Pickup ·
-// Account · Cart. One implementation, used by every customer screen.
-// ────────────────────────────────────────────────────────────
+class BathanMartLogo extends StatelessWidget {
+  final double iconSize;
+  final double fontSize;
+  const BathanMartLogo({super.key, this.iconSize = 26, this.fontSize = 22});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(Icons.shopping_cart_outlined,
+          color: AppColors.accent, size: iconSize),
+      const SizedBox(width: 8),
+      RichText(
+        text: TextSpan(children: [
+          TextSpan(
+            text: 'Bathan ',
+            style: AppText.h3(color: AppColors.textPrimary)
+                .copyWith(fontSize: fontSize, fontWeight: FontWeight.w800),
+          ),
+          TextSpan(
+            text: 'Mart',
+            style: AppText.h3(color: AppColors.accent)
+                .copyWith(fontSize: fontSize, fontWeight: FontWeight.w800),
+          ),
+        ]),
+      ),
+    ]);
+  }
+}
+
 class StorefrontTopNavBar extends StatelessWidget
     implements PreferredSizeWidget {
   final dynamic user;
@@ -112,23 +129,7 @@ class StorefrontTopNavBar extends StatelessWidget
                 children: [
                   InkWell(
                     onTap: () => context.go('/'),
-                    child: Row(children: [
-                      Container(
-                        width: 34,
-                        height: 34,
-                        decoration: const BoxDecoration(
-                            color: AppColors.accent, shape: BoxShape.circle),
-                        alignment: Alignment.center,
-                        child: const Text('B',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 16)),
-                      ),
-                      const SizedBox(width: 10),
-                      Text('Bathan Mart',
-                          style: AppText.h3(color: AppColors.primary)),
-                    ]),
+                    child: const BathanMartLogo(),
                   ),
                   if (isDesktop) ...[
                     const SizedBox(width: 20),
@@ -177,17 +178,6 @@ class StorefrontTopNavBar extends StatelessWidget
   }
 }
 
-// ── Categories mega-menu + inline search, merged into ONE pill.
-//
-// FIX (item 2 / item 3 in the request): redesigned to the compact
-// two-tone pill from the reference — white "Categories" segment,
-// muted search segment, single continuous border. The old version had
-// a stray blue focus box around just the TextField (Flutter's default
-// focused-border decoration bleeding through even though the input
-// used `border: InputBorder.none`, because `focusedBorder` wasn't
-// explicitly cleared). This version clears every border state on the
-// TextField and drives the *entire* pill's highlight color off one
-// `active` flag (menu open OR field focused), in accent orange.
 class _CategoriesSearchBar extends StatefulWidget {
   final List<dynamic> categories;
   const _CategoriesSearchBar({required this.categories});
@@ -203,6 +193,10 @@ class _CategoriesSearchBarState extends State<_CategoriesSearchBar> {
   Timer? _closeTimer;
   bool _open = false;
   bool _focused = false;
+
+  // Squared-off corner radius for the whole pill and its inner
+  // "Categories" segment.
+  static const double _kRadius = 10;
 
   @override
   void initState() {
@@ -275,7 +269,7 @@ class _CategoriesSearchBarState extends State<_CategoriesSearchBar> {
       link: _link,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        height: 38, // was 44 — smaller, closer to the reference
+        height: 38,
         decoration: BoxDecoration(
           color: AppColors.surfaceWarm,
           border: Border.all(
@@ -283,7 +277,7 @@ class _CategoriesSearchBarState extends State<_CategoriesSearchBar> {
                   ? AppColors.accent
                   : AppColors.textHint.withValues(alpha: 0.35),
               width: 1.2),
-          borderRadius: BorderRadius.circular(AppRadius.full),
+          borderRadius: BorderRadius.circular(_kRadius),
           boxShadow: active
               ? [
                   BoxShadow(
@@ -554,9 +548,6 @@ class _CartIcon extends StatelessWidget {
   }
 }
 
-// ────────────────────────────────────────────────────────────
-// FOOTER — left-aligned logo block + three link columns.
-// ────────────────────────────────────────────────────────────
 class StorefrontFooter extends StatelessWidget {
   const StorefrontFooter({super.key});
 
@@ -650,20 +641,7 @@ class StorefrontFooter extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(
-                color: AppColors.accent, shape: BoxShape.circle),
-            alignment: Alignment.center,
-            child: const Text('B',
-                style: TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.w800)),
-          ),
-          const SizedBox(width: 10),
-          Text('Bathan Mart', style: AppText.h3(color: AppColors.primary)),
-        ]),
+        const BathanMartLogo(iconSize: 24, fontSize: 20),
         const SizedBox(height: 12),
         SizedBox(
           width: 300,
@@ -678,24 +656,50 @@ class StorefrontFooter extends StatelessWidget {
   }
 
   Widget _col(String title, List<String> items) {
-    return Builder(builder: (context) {
-      return SizedBox(
-        width: 140,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: AppText.bodyMd(weight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            ...items.map((t) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: InkWell(
-                    onTap: () => context.go('/products'),
-                    child: Text(t, style: AppText.caption()),
-                  ),
-                )),
-          ],
+    return SizedBox(
+      width: 140,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: AppText.bodyMd(weight: FontWeight.w700)),
+          const SizedBox(height: 12),
+          ...items.map((t) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _FooterLink(label: t),
+              )),
+        ],
+      ),
+    );
+  }
+}
+
+class _FooterLink extends StatefulWidget {
+  final String label;
+  const _FooterLink({required this.label});
+
+  @override
+  State<_FooterLink> createState() => _FooterLinkState();
+}
+
+class _FooterLinkState extends State<_FooterLink> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: InkWell(
+        onTap: () => context.go('/products'),
+        child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 140),
+          style: _hover
+              ? AppText.caption(color: AppColors.accent)
+                  .copyWith(fontWeight: FontWeight.w700)
+              : AppText.caption(),
+          child: Text(widget.label),
         ),
-      );
-    });
+      ),
+    );
   }
 }
