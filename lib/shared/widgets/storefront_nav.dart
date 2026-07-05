@@ -300,7 +300,7 @@ class _CategoriesSearchBarState extends State<_CategoriesSearchBar> {
                   child: SizedBox(
                     height: 38,
                     child: Container(
-                      color: Colors.white,
+                      //color: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
                         const Icon(Icons.menu,
@@ -446,26 +446,36 @@ class _CategoryRowState extends State<_CategoryRow> {
   bool _hover = false;
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
+        hoverColor: AppColors.accent.withOpacity(0.08),
+        splashColor: AppColors.accent.withOpacity(0.12),
+        highlightColor: Colors.transparent,
+        onHover: (value) => setState(() => _hover = value),
         onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          color: _hover ? AppColors.surfaceWarm : Colors.transparent,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(children: [
-            Icon(widget.icon,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            children: [
+              Icon(
+                iconForCategory(widget.name),
                 size: 18,
-                color: _hover ? AppColors.accent : AppColors.textPrimary),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(widget.name,
+                color: _hover ? AppColors.accent : AppColors.textPrimary,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  widget.name,
                   style: AppText.bodyMd(
-                      weight: _hover ? FontWeight.w700 : FontWeight.w500)),
-            ),
-          ]),
+                    weight: _hover ? FontWeight.w700 : FontWeight.w500,
+                  ).copyWith(
+                    color: _hover ? AppColors.accent : AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
