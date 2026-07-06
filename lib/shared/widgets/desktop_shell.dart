@@ -9,12 +9,39 @@ import '../../features/cart/bloc/cart_bloc.dart';
 class DesktopShell extends StatelessWidget {
   final Widget child;
   const DesktopShell({super.key, required this.child});
+
+  // Routes whose pages already build their own Scaffold + top nav
+  // (e.g. StorefrontTopNavBar). DesktopShell must NOT add a second
+  // nav bar on top of these — it should just pass the child through.
+  static const _selfNavRoutePrefixes = [
+    '/home',
+    '/products',
+    '/categories',
+    '/category',
+    '/cart',
+    '/checkout',
+    '/orders',
+    '/account',
+    '/subscriptions',
+  ];
+
+  bool _hasOwnNav(BuildContext context) {
+    final loc = GoRouterState.of(context).matchedLocation;
+    return _selfNavRoutePrefixes.any((p) => loc == p || loc.startsWith('$p/'));
+  }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: const _TopNavBar(),
-        body: child,
-      );
+  Widget build(BuildContext context) {
+    if (_hasOwnNav(context)) {
+      // Page already renders its own Scaffold + StorefrontTopNavBar.
+      return child;
+    }
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: const _TopNavBar(),
+      body: child,
+    );
+  }
 }
 
 class _TopNavBar extends StatelessWidget implements PreferredSizeWidget {

@@ -203,15 +203,35 @@ class _HeroCarouselState extends State<_HeroCarousel> {
   int _page = 0;
   Timer? _timer;
 
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+  // Page 0 (_HeroBanner) runs its own internal image carousel via
+  // _HalfCircleImageStage — 3 images at 4s each. Keep those numbers
+  // in sync with _HeroBanner._stageImages / the interval passed to
+  // _HalfCircleImageStage so the outer page doesn't advance mid-cycle.
+  static const int _bannerImageCount = 3;
+  static const Duration _bannerImageInterval = Duration(seconds: 4);
+  static const Duration _otherPageDwell = Duration(seconds: 5);
+
+  Duration _dwellForPage(int page) {
+    if (page == 0) {
+      return _bannerImageInterval * _bannerImageCount; // 12s total
+    }
+    return _otherPageDwell;
+  }
+
+  void _scheduleNext() {
+    _timer?.cancel();
+    _timer = Timer(_dwellForPage(_page), () {
       if (!mounted) return;
       final next = (_page + 1) % 3;
       _controller.animateToPage(next,
           duration: const Duration(milliseconds: 600), curve: Curves.easeOut);
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleNext();
   }
 
   @override
@@ -230,7 +250,10 @@ class _HeroCarouselState extends State<_HeroCarousel> {
           height: h,
           child: PageView(
             controller: _controller,
-            onPageChanged: (i) => setState(() => _page = i),
+            onPageChanged: (i) {
+              setState(() => _page = i);
+              _scheduleNext();
+            },
             children: [
               _HeroBanner(
                   firstName: widget.firstName, isDesktop: widget.isDesktop),
@@ -364,13 +387,11 @@ class _HeroBanner extends StatelessWidget {
   final bool isDesktop;
   const _HeroBanner({required this.firstName, required this.isDesktop});
 
-  static const _tiles = [
-    (Icons.shopping_cart_outlined, 'Grocery'),
-    (Icons.devices_other_outlined, 'Electronics'),
-    (Icons.checkroom_outlined, 'Clothing'),
-    (Icons.chair_outlined, 'Home'),
-    (Icons.face_retouching_natural_outlined, 'Beauty'),
-    (Icons.toys_outlined, 'Toys'),
+  // Images cycled through the half-circle image stage on the right.
+  static const _stageImages = [
+    'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=900&q=80',
   ];
 
   @override
@@ -381,23 +402,47 @@ class _HeroBanner extends StatelessWidget {
         gradient: AppGradients.primary,
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
-      padding: EdgeInsets.all(isDesktop ? 36 : 24),
+      // Clip so the image's square right/top/bottom corners blend
+      // seamlessly into the panel's own rounded corners.
+      clipBehavior: Clip.antiAlias,
       child: isDesktop
           ? Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(flex: 6, child: _copy(context)),
-                const SizedBox(width: 32),
-                Expanded(flex: 5, child: _tileGrid()),
+                Expanded(
+                  flex: 6,
+                  child: Padding(
+                    padding: const EdgeInsets.all(36),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: _copy(context),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 5,
+                  child: _HalfCircleImageStage(
+                    images: _stageImages,
+                    isDesktop: isDesktop,
+                    interval: _HeroCarouselState._bannerImageInterval,
+                  ),
+                ),
               ],
             )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _copy(context),
-                const SizedBox(height: 20),
-                _tileGrid(),
-              ],
+          : Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _copy(context),
+                  const SizedBox(height: 24),
+                  _HalfCircleImageStage(
+                    images: _stageImages,
+                    isDesktop: isDesktop,
+                    interval: _HeroCarouselState._bannerImageInterval,
+                  ),
+                ],
+              ),
             ),
     );
   }
@@ -446,44 +491,6 @@ class _HeroBanner extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _tileGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _tiles.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        childAspectRatio: 1.3,
-      ),
-      itemBuilder: (_, i) {
-        final t = _tiles[i];
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withAlpha(26),
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(color: Colors.white.withAlpha(46)),
-          ),
-          alignment: Alignment.center,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(t.$1, size: 20, color: Colors.white.withAlpha(235)),
-              const SizedBox(height: 4),
-              Text(t.$2,
-                  style: TextStyle(
-                      color: Colors.white.withAlpha(210),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w600)),
-            ],
-          ),
-        );
-      },
     );
   }
 }
@@ -576,6 +583,101 @@ class _HeroCtaOutlineState extends State<_HeroCtaOutline> {
         ),
       ),
     );
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// HALF-CIRCLE IMAGE STAGE — replaces the old tilted promo cards.
+// Image sits flush against the top/right/bottom edges of the hero
+// panel, with a large rounded bulge only on the left edge (desktop),
+// and autoplays a crossfade + scale transition between images.
+// On mobile it falls back to a plain rounded-rect image.
+// ────────────────────────────────────────────────────────────
+class _HalfCircleImageStage extends StatefulWidget {
+  final List<String> images;
+  final bool isDesktop;
+  final Duration interval;
+  const _HalfCircleImageStage({
+    required this.images,
+    required this.isDesktop,
+    this.interval = const Duration(seconds: 4),
+  });
+
+  @override
+  State<_HalfCircleImageStage> createState() => _HalfCircleImageStageState();
+}
+
+class _HalfCircleImageStageState extends State<_HalfCircleImageStage> {
+  int _index = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.images.length > 1) {
+      _timer = Timer.periodic(widget.interval, (_) {
+        if (!mounted) return;
+        setState(() => _index = (_index + 1) % widget.images.length);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Widget _crossfadeImage() {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 580),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeIn,
+      transitionBuilder: (child, anim) => FadeTransition(
+        opacity: anim,
+        child: ScaleTransition(
+          scale: Tween(begin: 0.92, end: 1.0).animate(anim),
+          child: child,
+        ),
+      ),
+      child: Image.network(
+        widget.images[_index],
+        key: ValueKey(_index),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) => Container(color: AppColors.primaryDark),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.isDesktop) {
+      // Stacked (mobile) layout: simple rounded-rect image.
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: SizedBox(
+          height: 220,
+          width: double.infinity,
+          child: _crossfadeImage(),
+        ),
+      );
+    }
+
+    // Desktop layout: flush to the top/right/bottom edges of its
+    // cell, with a large rounded bulge only on the left edge.
+    return LayoutBuilder(builder: (context, constraints) {
+      final h = constraints.maxHeight.isFinite ? constraints.maxHeight : 400.0;
+      final leftRadius = h / 2;
+      return ClipRRect(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(leftRadius),
+          bottomLeft: Radius.circular(leftRadius),
+        ),
+        child: _crossfadeImage(),
+      );
+    });
   }
 }
 
